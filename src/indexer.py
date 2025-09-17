@@ -11,15 +11,20 @@ class ImageIndexer:
         self.index = faiss.IndexFlatIP(dim) 
         self.id_to_path = []
 
+        from src.config import INDEX_PATH, MAPPING_PATH
+        self.index_path = INDEX_PATH
+        self.mapping_path = MAPPING_PATH
+
     def build_index(self, image_folder=IMAGE_DIR, rebuild=False):
         if os.path.exists(INDEX_PATH) and os.path.exists(MAPPING_PATH) and not rebuild:
             self.load_index()
             return
 
-        paths = []
-        for fname in sorted(os.listdir(image_folder)):
-            if fname.lower().endswith((".jpg", ".jpeg", ".png")):
-                paths.append(os.path.join(image_folder, fname))
+        paths = [
+            os.path.join(image_folder, f)
+            for f in sorted(os.listdir(image_folder))
+            if f.lower().endswith((".jpg", ".jpeg", ".png"))
+        ]
         if not paths:
             raise ValueError("No images found in " + image_folder)
 
@@ -47,12 +52,14 @@ class ImageIndexer:
             results.append({"path": path, "score": float(score)})
         return results
 
-    def save_index(self, index_path=INDEX_PATH, mapping_path=MAPPING_PATH):
-        faiss.write_index(self.index, index_path)
-        with open(mapping_path, "w", encoding="utf-8") as f:
+    def save_index(self):
+        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.mapping_path), exist_ok=True)
+        faiss.write_index(self.index, self.index_path)
+        with open(self.mapping_path, "w", encoding="utf-8") as f:
             json.dump(self.id_to_path, f)
 
-    def load_index(self, index_path=INDEX_PATH, mapping_path=MAPPING_PATH):
-        self.index = faiss.read_index(index_path)
-        with open(mapping_path, "r", encoding="utf-8") as f:
+    def load_index(self):
+        self.index = faiss.read_index(self.index_path)
+        with open(self.mapping_path, "r", encoding="utf-8") as f:
             self.id_to_path = json.load(f)
