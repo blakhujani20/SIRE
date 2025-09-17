@@ -5,18 +5,17 @@ from src.config import IMAGE_DIR, INDEX_PATH, MAPPING_PATH
 from typing import List
 
 class ImageIndexer:
-    def __init__(self, embedder, dim=512):
+    def __init__(self, embedder, dim=512, index_path=INDEX_PATH, mapping_path=MAPPING_PATH):
         self.embedder = embedder
         self.dim = dim
         self.index = faiss.IndexFlatIP(dim) 
         self.id_to_path = []
 
-        from src.config import INDEX_PATH, MAPPING_PATH
-        self.index_path = INDEX_PATH
-        self.mapping_path = MAPPING_PATH
+        self.index_path = index_path
+        self.mapping_path = mapping_path
 
     def build_index(self, image_folder=IMAGE_DIR, rebuild=False):
-        if os.path.exists(INDEX_PATH) and os.path.exists(MAPPING_PATH) and not rebuild:
+        if os.path.exists(self.index_path) and os.path.exists(self.mapping_path) and not rebuild:
             self.load_index()
             return
 
